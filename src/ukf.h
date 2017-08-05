@@ -6,10 +6,12 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <math.h>
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
+#define MIN_VAL 0.0001
 class UKF {
 public:
 
@@ -18,9 +20,15 @@ public:
 
   ///* if this is false, laser measurements will be ignored (except for init)
   bool use_laser_;
+  //*radar covariance matrix
+  MatrixXd M_lidar;
+  float nis_lidar;
 
   ///* if this is false, radar measurements will be ignored (except for init)
   bool use_radar_;
+  //*lidar covariance matrix
+  MatrixXd M_radar;
+  float nis_radar;
 
   ///* state vector: [pos1 pos2 vel_abs yaw_angle yaw_rate] in SI units and rad
   VectorXd x_;
@@ -67,6 +75,9 @@ public:
   ///* Sigma point spreading parameter
   double lambda_;
 
+  ///*Number of sigma points
+  int n_sigma_;
+
 
   /**
    * Constructor
@@ -90,6 +101,11 @@ public:
    * @param delta_t Time between k and k+1 in s
    */
   void Prediction(double delta_t);
+
+  /* Common update function for LIDAR and RADAR */
+  void UKFCommonUpdate(MeasurementPackage meas_package,
+    MatrixXd Zsig,
+    int measurement_size);
 
   /**
    * Updates the state and the state covariance matrix using a laser measurement
