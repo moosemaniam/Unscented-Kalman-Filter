@@ -51,6 +51,5 @@ float Tools::normalize_to_pi(float angle){
   while(angle < -M_PI)
     angle += 2*M_PI;
 
-  assert(angle > -M_PI && angle < M_PI);
   return angle;
 }
