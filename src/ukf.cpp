@@ -123,10 +123,10 @@ void UKF::ProcessMeasurement(MeasurementPackage measurement_pack) {
       x_ << measurement_pack.raw_measurements_[0],measurement_pack.raw_measurements_[1],0,0;
     }
 
-    if(x_[0] < MIN_VAL)
+    if(fabs(x_[0]) < MIN_VAL)
       x_[0] = MIN_VAL;
 
-    if(x_[1] < MIN_VAL)
+    if(fabs(x_[1]) < MIN_VAL)
       x_[1] = MIN_VAL;
 
     weights_(0) = lambda_/(n_aug_ + lambda_);
@@ -153,6 +153,23 @@ void UKF::ProcessMeasurement(MeasurementPackage measurement_pack) {
   dt = dt/1000000.0;
 
   Prediction(dt);
+
+  cout << "here 157 " << endl;
+
+
+  if(measurement_pack.sensor_type_ == MeasurementPackage::RADAR &&
+      use_radar_) {
+    UpdateRadar(measurement_pack);
+
+  cout << "here 2 " << endl;
+  }
+  if(measurement_pack.sensor_type_ == MeasurementPackage::LASER &&
+      use_laser_) {
+    UpdateLidar(measurement_pack);
+
+  cout << "here 3 " << endl;
+  }
+  //exit(0);
 }
 
 /**
@@ -171,6 +188,7 @@ void UKF::Prediction(double delta_t) {
   MatrixXd Xsig_aug = MatrixXd(n_aug_,n_sigma_); /* Sigma point matrix */
   MatrixXd P_aug = MatrixXd(n_aug_,n_aug_); /* Augmented state covariance matrix */
   /* Fill x aug */
+  Xsig_aug.fill(0.0);
   x_aug.fill(0.0);
   x_aug.head(n_x_) = x_;
 
@@ -215,35 +233,36 @@ void UKF::Prediction(double delta_t) {
     float vx_yawd,px_update,py_update;
 
 
-    if(fabs(yaw_d) < MIN_VAL){
+    if(fabs(yaw_d) > MIN_VAL)
+{
+      float v_by_yawd = v / yaw_d;
+      px_predicted = p_x + v_by_yawd * (sin(update_angle) - sin(yaw));
+      py_predicted = p_y + v_by_yawd * (cos(yaw) - cos(update_angle));
+
+    cout << "px updated2 " << px_predicted<< endl;
+    cout << "py updated2 " << py_predicted<< endl;
+    }
+    else {
       /* Incase of low/zero yaw_d value */
-      px_update = p_x + v  * delta_t * cos(yaw);
-      py_update = p_y + v  * delta_t * sin(yaw);
+      px_predicted= p_x + v  * delta_t * cos(yaw);
+      py_predicted= p_y + v  * delta_t * sin(yaw);
       cout << "v " << v << endl;
       cout << "delta_t " << delta_t << endl;
       cout << "cos_yaw " << cos(yaw)<< endl;
       cout << "sin_yaw " << sin(yaw)<< endl;
 
-      cout << "px updated1 " << px_update << endl;
-      cout << "py updated1 " << py_update<< endl;
-    }
-    else {
-      float v_by_yawd = v / yaw_d;
-      px_update = p_x + v_by_yawd * (sin(update_angle) - sin(yaw));
-      py_update = p_y + v_by_yawd * (cos(yaw) - cos(update_angle));
-
-    cout << "px updated2 " << px_update << endl;
-    cout << "py updated2 " << py_update<< endl;
+      cout << "px updated1 " << px_predicted << endl;
+      cout << "py updated1 " << py_predicted << endl;
     }
 
-    cout << "px updated " << px_update << endl;
-    cout << "py updated " << py_update<< endl;
+    cout << "px updated " << px_predicted<< endl;
+    cout << "py updated " << py_predicted<< endl;
     float v_p = v;
     float yaw_p,yawd_p;
     /*Position Prediction */
-    px_predicted = p_x + px_update;
-    py_predicted = p_y + py_update;
 
+    yawd_p = yaw_d;
+    yaw_p = update_angle;
     cout << "px predicted" << px_predicted<< endl;
     cout << "py predicted" << py_predicted<< endl;
     /* add noise to position prediction */
@@ -256,6 +275,7 @@ void UKF::Prediction(double delta_t) {
     yaw_p += 0.5*nu_yawdd*dt2;
     yawd_p += nu_yawdd*delta_t;
 
+    cout << "nu_yawdd" << nu_yawdd<< endl;
     cout << "px predicted + noise " << px_predicted<< endl;
     cout << "py predicted + noise " << py_predicted<< endl;
     cout << "v predicted" << v_p<< endl;
@@ -277,7 +297,11 @@ void UKF::Prediction(double delta_t) {
     VectorXd x_d = Xsig_pred_.col(i) - x_;
     x_d(3) =  math_tools.normalize_to_pi(x_d(3));
     P_ = P_ + weights_(i) * x_d * x_d.transpose();
+    cout << "x_" << x_<< endl;
+    cout << "xsig" << Xsig_pred_.col(i)<< endl;
+    cout << "x_d" << x_d << endl;
   }
+  cout << "weights" << weights_<< endl;
   cout << "x_aug" << x_aug<< endl;
   cout << "P_aug" << P_aug<< endl;
   cout << "Xsig_aug" << Xsig_aug<< endl;
@@ -285,7 +309,6 @@ void UKF::Prediction(double delta_t) {
   cout << "prediction" << P_ << endl;
   cout << "x at prediction" << x_ << endl;
 
-  exit(0);
 }
 /* Common update function for both lidar and radar */
 void UKF::UKFCommonUpdate(MeasurementPackage meas_package,
@@ -296,6 +319,8 @@ void UKF::UKFCommonUpdate(MeasurementPackage meas_package,
   pred = Sig * weights_;
   Tools math_tools;
 
+  cout <<  "UKF common 1" <<endl;
+  cout <<  "UKF common n_sigma" << n_sigma_<<endl;
   /* measurement covariance matrix*/
   MatrixXd S = MatrixXd(measurement_size,measurement_size);
   S.fill(0.0);
@@ -305,6 +330,10 @@ void UKF::UKFCommonUpdate(MeasurementPackage meas_package,
     /* normalize the angle to -pi to pi*/
     diff(1) = math_tools.normalize_to_pi(diff(1));
     S = S + weights_(i) * diff * diff.transpose();
+  cout <<  "UKF common sigmapoint " << i << endl;
+  cout <<  "UKF common z_diff" << diff << endl;
+  cout <<  "UKF common S" << S<< endl;
+  cout <<  "UKF common wieghts" << weights_<< endl;
   }
 
   MatrixXd M_noise = MatrixXd(measurement_size,measurement_size);
@@ -321,7 +350,7 @@ void UKF::UKFCommonUpdate(MeasurementPackage meas_package,
   /* Add measurement noise */
   S = S + M_noise;
   /* Cross correlation matrix */
-  MatrixXd CC_M = MatrixXd(measurement_size,measurement_size);
+  MatrixXd CC_M = MatrixXd(n_x_,measurement_size);
   CC_M.fill(0.0);
 
   for(int i =0;i < n_sigma_;i++)
@@ -365,8 +394,11 @@ if (meas_package.sensor_type_ == MeasurementPackage::RADAR)
  */
 void UKF::UpdateLidar(MeasurementPackage meas_package) {
   const int measurement_size=2;
+  cout << "UKF updatelidar 1" << endl;
   MatrixXd XsigLidar = Xsig_pred_.block(0,0,measurement_size,n_sigma_);
+  cout << "UKF updatelidar 2" << endl;
   UKFCommonUpdate(meas_package,XsigLidar,measurement_size);
+  cout << "UKF updatelidar 3" << endl;
 }
 
 
@@ -377,8 +409,12 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
  */
 void UKF::UpdateRadar(MeasurementPackage meas_package) {
   const int measurement_size=3;
+  cout << "Here?" << endl;
+#if 1
+
   MatrixXd XsigRadar= MatrixXd(measurement_size,n_sigma_);
 
+  cout << "update radar n_sigma" << n_sigma_<<endl;
   for(int i=0;i < n_sigma_;i++){
     float p_x = Xsig_pred_(0,i);
     float p_y = Xsig_pred_(1,i);
@@ -388,12 +424,23 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     float v_x = v*cos(yaw);
     /* vertical component of velocity */
     float v_y = v*sin(yaw);
+
+    cout << "update radar p_x" << p_x <<endl;
+    cout << "update radar p_y" << p_y <<endl;
+    cout << "update radar v" << v <<endl;
+    cout << "update radar yaw" << yaw<<endl;
+    cout << "update radar v1" << v_x <<endl;
+    cout << "update radar v2" << v_y <<endl;
     /* r */
     XsigRadar(0,i) =sqrt(p_x*p_x + p_y*p_y);
     /* phi */
     XsigRadar(1,i) =atan2(p_y,p_x);
     /* dot */
     XsigRadar(2,i) =(p_x*v_y + p_y*v_x)/XsigRadar(0,i);
+    cout << "XsigRadar" << XsigRadar <<endl;
   }
+  cout << "XsigRadar before update" << XsigRadar<< endl;
   UKFCommonUpdate(meas_package,XsigRadar,measurement_size);
+  cout << "XsigRadar after update" << XsigRadar<< endl;
+#endif
 }
