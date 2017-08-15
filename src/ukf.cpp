@@ -120,7 +120,7 @@ void UKF::ProcessMeasurement(MeasurementPackage measurement_pack) {
       /**
         Initialize state.
         */
-      x_ << measurement_pack.raw_measurements_[0],measurement_pack.raw_measurements_[1],0,0;
+      x_ << measurement_pack.raw_measurements_[0],measurement_pack.raw_measurements_[1],0,0,0;
     }
 
     if(fabs(x_[0]) < MIN_VAL)
@@ -408,11 +408,11 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
  */
 void UKF::UpdateRadar(MeasurementPackage meas_package) {
   const int measurement_size=3;
-  cout << "Here?" << endl;
 #if 1
 
   MatrixXd XsigRadar= MatrixXd(measurement_size,n_sigma_);
 
+  XsigRadar.fill(0.0);
   cout << "update radar n_sigma" << n_sigma_<<endl;
   for(int i=0;i < n_sigma_;i++){
     double p_x = Xsig_pred_(0,i);
@@ -435,7 +435,12 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     /* phi */
     XsigRadar(1,i) =atan2(p_y,p_x);
     /* dot */
-    XsigRadar(2,i) =(p_x*v_y + p_y*v_x)/XsigRadar(0,i);
+    XsigRadar(2,i) =(p_x*v_x + p_y*v_y)/XsigRadar(0,i);
+
+    cout << "val1" << XsigRadar(0,i)<<endl;
+    cout << "val2" << XsigRadar(1,i)<<endl;
+    cout << "val3" << XsigRadar(2,i)<<endl;
+
     cout << "XsigRadar" << XsigRadar <<endl;
   }
   cout << "XsigRadar before update" << XsigRadar<< endl;
