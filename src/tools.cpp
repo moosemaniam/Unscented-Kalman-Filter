@@ -43,7 +43,7 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
   return rmse;
 }
 
-float Tools::normalize_to_pi(float angle){
+double Tools::normalize_to_pi(double angle){
 
   while(angle >M_PI)
     angle -= 2*M_PI;

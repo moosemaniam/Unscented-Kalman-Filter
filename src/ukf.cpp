@@ -100,19 +100,19 @@ void UKF::ProcessMeasurement(MeasurementPackage measurement_pack) {
       /**
         Convert radar from polar to cartesian coordinates and initialize state.
         */
-      float rho = measurement_pack.raw_measurements_[0];
-      float phi = measurement_pack.raw_measurements_[1];
-      float rho_d= measurement_pack.raw_measurements_[2];
+      double rho = measurement_pack.raw_measurements_[0];
+      double phi = measurement_pack.raw_measurements_[1];
+      double rho_d= measurement_pack.raw_measurements_[2];
 
       /* x is projection of the rho vector on x axis */
-      float x =  rho * cos(phi);
+      double x =  rho * cos(phi);
       /* x is projection of the rho vector on y axis */
-      float y =  rho * sin(phi);
+      double y =  rho * sin(phi);
 
       /* Similiarly, velocity projections on x and y axis */
-      float vx = rho_d * cos(phi);
-      float vy = rho_d * sin(phi);
-      float v = sqrt(vx*vx + vy*vy);
+      double vx = rho_d * cos(phi);
+      double vy = rho_d * sin(phi);
+      double v = sqrt(vx*vx + vy*vy);
 
       x_ << x,y,v,0,0;
     }
@@ -202,7 +202,6 @@ void UKF::Prediction(double delta_t) {
 
   Xsig_aug.col(0) = x_aug;
 
-  cout << "Xsig_aug1" << Xsig_aug<< endl;
   cout << "sqrt of lamda n aug" <<sqrt_lambda_plus_n_aug<< endl;
   for(int i=0;i<n_aug_;i++){
     sqrt_lambda_plus_n_aug_vec = sqrt_lambda_plus_n_aug * L.col(i);
@@ -218,29 +217,29 @@ void UKF::Prediction(double delta_t) {
   for(int i =0; i< n_sigma_;i++)
   {
     cout << "Sigma point " << i << endl << endl;
-    float p_x= Xsig_aug(0,i);
-    float p_y = Xsig_aug(1,i);
-    float v= Xsig_aug(2,i);
-    float yaw = Xsig_aug(3,i);
-    float yaw_d = Xsig_aug(4,i);
+    double p_x= Xsig_aug(0,i);
+    double p_y = Xsig_aug(1,i);
+    double v= Xsig_aug(2,i);
+    double yaw = Xsig_aug(3,i);
+    double yaw_d = Xsig_aug(4,i);
 
-    float nu_a = Xsig_aug(5,i);
-    float nu_yawdd = Xsig_aug(6,i);
-    float update_angle = yaw + yaw_d*delta_t;
+    double nu_a = Xsig_aug(5,i);
+    double nu_yawdd = Xsig_aug(6,i);
+    double update_angle = yaw + yaw_d*delta_t;
 
-    float  px_predicted,py_predicted;
+    double  px_predicted,py_predicted;
 
-    float vx_yawd,px_update,py_update;
+    double vx_yawd,px_update,py_update;
 
 
+    cout <<  "yawd comparison" << yaw_d << endl;
     if(fabs(yaw_d) > MIN_VAL)
-{
-      float v_by_yawd = v / yaw_d;
+    { double v_by_yawd = v / yaw_d;
       px_predicted = p_x + v_by_yawd * (sin(update_angle) - sin(yaw));
       py_predicted = p_y + v_by_yawd * (cos(yaw) - cos(update_angle));
 
-    cout << "px updated2 " << px_predicted<< endl;
-    cout << "py updated2 " << py_predicted<< endl;
+      cout << "px updated2 " << px_predicted<< endl;
+      cout << "py updated2 " << py_predicted<< endl;
     }
     else {
       /* Incase of low/zero yaw_d value */
@@ -257,8 +256,8 @@ void UKF::Prediction(double delta_t) {
 
     cout << "px updated " << px_predicted<< endl;
     cout << "py updated " << py_predicted<< endl;
-    float v_p = v;
-    float yaw_p,yawd_p;
+    double v_p = v;
+    double yaw_p,yawd_p;
     /*Position Prediction */
 
     yawd_p = yaw_d;
@@ -416,14 +415,14 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 
   cout << "update radar n_sigma" << n_sigma_<<endl;
   for(int i=0;i < n_sigma_;i++){
-    float p_x = Xsig_pred_(0,i);
-    float p_y = Xsig_pred_(1,i);
-    float v  = Xsig_pred_(2,i);
+    double p_x = Xsig_pred_(0,i);
+    double p_y = Xsig_pred_(1,i);
+    double v  = Xsig_pred_(2,i);
     /* horizontal component of velocity */
-    float yaw = Xsig_pred_(3,i);
-    float v_x = v*cos(yaw);
+    double yaw = Xsig_pred_(3,i);
+    double v_x = v*cos(yaw);
     /* vertical component of velocity */
-    float v_y = v*sin(yaw);
+    double v_y = v*sin(yaw);
 
     cout << "update radar p_x" << p_x <<endl;
     cout << "update radar p_y" << p_y <<endl;

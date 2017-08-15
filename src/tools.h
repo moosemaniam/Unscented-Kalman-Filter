@@ -25,7 +25,7 @@ class Tools {
     VectorXd CalculateRMSE(const vector<VectorXd> &estimations, const vector<VectorXd> &ground_truth);
 
      /*returns Normalizes angles (normalizes -PI to PI) */
-    float normalize_to_pi(float angle);
+    double normalize_to_pi(double angle);
 };
 
 #endif /* TOOLS_H_ */

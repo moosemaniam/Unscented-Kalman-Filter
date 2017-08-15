@@ -11,7 +11,7 @@
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-#define MIN_VAL 0.0001
+#define MIN_VAL 0.001
 class UKF {
 public:
 
@@ -22,13 +22,13 @@ public:
   bool use_laser_;
   //*radar covariance matrix
   MatrixXd M_lidar;
-  float nis_lidar;
+  double nis_lidar;
 
   ///* if this is false, radar measurements will be ignored (except for init)
   bool use_radar_;
   //*lidar covariance matrix
   MatrixXd M_radar;
-  float nis_radar;
+  double nis_radar;
 
   ///* state vector: [pos1 pos2 vel_abs yaw_angle yaw_rate] in SI units and rad
   VectorXd x_;
